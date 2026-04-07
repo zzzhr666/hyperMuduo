@@ -48,6 +48,7 @@ Testing/
 *.swo
 *~
 .qwen/
+GEMINI.md
 
 # Local tooling/runtime folders
 .cursor/
