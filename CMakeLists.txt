@@ -4,6 +4,8 @@ project(HyperMuduo)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
+enable_testing()
 find_package(Threads REQUIRED)
 find_package(Protobuf REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -25,7 +27,9 @@ set(NET_SOURCE
         net/Channel.cpp
         net/Channel.hpp
         net/Poller.cpp
-        net/Poller.hpp
+        net/Timer.cpp
+        net/TimerQueue.cpp
+        net/TimerQueue.hpp
 )
 
 set(PROTO_SOURCE
@@ -57,5 +61,9 @@ target_link_libraries(hyper_muduo
 )
 
 
-add_executable(Test main.cpp)
-target_link_libraries(Test PRIVATE hyper_muduo)
+add_executable(simpletest
+        main.cpp
+)
+target_link_libraries(simpletest PRIVATE hyper_muduo)
+
+add_subdirectory(test)

@@ -17,7 +17,7 @@ hyperMuduo::net::Poller::TimePoint hyperMuduo::net::Poller::poll(std::chrono::mi
     if (num_events < 0) {
         SPDLOG_ERROR("Poller::poll() failed.");
     } else if (num_events == 0) {
-        SPDLOG_INFO("Nothing happened.");
+        SPDLOG_TRACE("Nothing happened.");
     } else {
         SPDLOG_TRACE("{} events happened", num_events);
         fillActiveChannels(num_events, active_channels);
@@ -43,6 +43,29 @@ void hyperMuduo::net::Poller::updateChannel(Channel& channel) {
             pollFdList_[index].fd = channel.getFd();
         }
     }
+}
+
+void hyperMuduo::net::Poller::removeChannel(Channel& channel) {
+    assertInLoopThread();
+    int index = channel.index();
+    if (index < 0 || index >= pollFdList_.size()) {
+        return;
+    }
+    if (index < pollFdList_.size() - 1) {
+        std::swap(pollFdList_[index], pollFdList_.back());
+        int fd = pollFdList_[index].fd;
+        if (fd < 0) {
+            fd = ~fd;
+        }
+        if (auto it = channels_.find(fd); it != channels_.end()) {
+            it->second->setIndex(index);
+        }
+
+    }
+    pollFdList_.pop_back();
+    channels_.erase(channel.getFd());
+    channel.setIndex(Channel::NOT_FILL);
+
 }
 
 void hyperMuduo::net::Poller::assertInLoopThread() {

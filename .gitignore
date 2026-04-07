@@ -47,6 +47,7 @@ Testing/
 *.swp
 *.swo
 *~
+.qwen/
 
 # Local tooling/runtime folders
 .cursor/

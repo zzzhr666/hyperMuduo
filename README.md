@@ -52,7 +52,7 @@
 - [x] 建立基础目录结构（`Base/`、`net/`、`proto/`）
 - [x] 增加根目录 `.gitignore`（忽略构建产物、IDE 配置、本地缓存）
 - [x] 配置基础格式化文件（`.clang-format`）
-- [ ] 增加测试框架（GoogleTest 或等价方案）
+- [x] 增加测试框架（GoogleTest 或等价方案）
 - [ ] 增加 CI（至少包含构建检查）
 - [ ] 增加静态检查（`clang-tidy`/`cppcheck`）
 
@@ -63,11 +63,11 @@
 - [x] 线程唯一性约束（同线程单 EventLoop）
 - [x] `loop()` 初版入口（占位轮询）
 - [x] 线程归属断言（`assertInLoopThread`）
-- [ ] 完成循环骨架：`while (!quit_)` 持续事件分发
-- [ ] 增加 `quit()` 语义并可安全退出循环
-- [ ] 接入 `Poller` 并驱动 active channels 处理
-- [ ] 支持跨线程任务投递（`runInLoop/queueInLoop`）
-- [ ] 增加唤醒机制（`eventfd` 或 `pipe`）
+- [x] 完成循环骨架：`while (!quit_)` 持续事件分发
+- [x] 增加 `quit()` 语义并可安全退出循环
+- [x] 接入 `Poller` 并驱动 active channels 处理
+- [x] 支持跨线程任务投递（`runInLoop/queueInLoop`）
+- [x] 增加唤醒机制（`eventfd` 或 `pipe`）
 
 #### B2. Channel
 
@@ -85,7 +85,7 @@
 - [x] `updateChannel()` 新增/更新逻辑
 - [x] `fillActiveChannels()` 活跃事件收集
 - [x] 线程归属校验
-- [ ] `removeChannel()` 与 channel 生命周期闭环
+- [x] `removeChannel()` 与 channel 生命周期闭环
 - [ ] 优化 `fd < 0` 的禁用项处理和映射一致性
 - [ ] 增加参数与状态合法性断言（索引/映射一致）
 - [ ] 预留后续 `epoll` 版本抽象
@@ -99,7 +99,15 @@
 - [x] `makeSpace` 扩容与数据搬移
 - [x] `readFd` 双缓冲读取（`readv`）
 - [ ] 增加 writeFd/send 路径
-- [ ] 增加单测覆盖边界情况（空包、大包、反复扩容）
+- [x] 增加单测覆盖边界情况（空包、大包、反复扩容）
+
+#### B4. Timer / TimerQueue
+
+- [x] Timer 类：一次性/重复定时器，原子序号管理
+- [x] TimerQueue：基于 `timerfd` + `priority_queue` 的定时器队列
+- [x] EventLoop 暴露 `runAt`/`runAfter`/`runEvery`/`cancelTimer` 接口
+- [x] 配套单测（22 个测试全部通过，覆盖一次性/重复/取消/跨线程/压力场景）
+- [ ] TimerQueue 跨线程安全性进一步完善
 
 #### C2. TcpConnection
 

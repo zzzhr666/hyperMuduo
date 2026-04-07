@@ -33,6 +33,8 @@ namespace hyperMuduo::net {
 
         void updateChannel(Channel& channel);
 
+        void removeChannel(Channel& channel);
+
         void assertInLoopThread();
     private:
         using PollFdList = std::vector<pollfd>;
