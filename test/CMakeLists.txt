@@ -1,6 +1,52 @@
 find_package(GTest REQUIRED)
 
-add_executable(HyperMuduoGTests
+# 通用测试函数
+function(add_hyper_test test_name test_files)
+    add_executable(${test_name} ${test_files})
+    target_link_libraries(${test_name}
+        PRIVATE
+        hyper_muduo
+        GTest::gtest
+        GTest::gtest_main
+    )
+    add_test(NAME ${test_name} COMMAND ${test_name})
+endfunction()
+
+# ==================== 各组件独立测试 ====================
+
+# Buffer 测试
+add_hyper_test(BufferTests test_buffer.cpp)
+
+# Codec 测试
+add_hyper_test(CodecTests test_codec.cpp)
+
+# Protobuf 测试
+add_hyper_test(ProtobufTests test_protobuf.cpp)
+
+# EventLoop 测试
+add_hyper_test(EventLoopTests test_event_loop.cpp)
+
+# Timer 测试
+add_hyper_test(TimerTests test_timer.cpp)
+
+# TimerQueue 测试
+add_hyper_test(TimerQueueTests test_timerqueue.cpp)
+
+# EventLoopThread 测试
+add_hyper_test(EventLoopThreadTests test_eventloopthread.cpp)
+
+# InetAddress 测试
+add_hyper_test(InetAddressTests test_inetaddress.cpp)
+
+# Socket 测试
+add_hyper_test(SocketTests test_socket.cpp)
+
+# Acceptor 测试
+add_hyper_test(AcceptorTests test_acceptor.cpp)
+
+# ==================== 汇总大测试 ====================
+# 将所有测试文件合并为一个可执行文件
+add_executable(HyperMuduoAllTests
     test_buffer.cpp
     test_codec.cpp
     test_protobuf.cpp
@@ -13,12 +59,11 @@ add_executable(HyperMuduoGTests
     test_acceptor.cpp
 )
 
-target_link_libraries(HyperMuduoGTests
+target_link_libraries(HyperMuduoAllTests
     PRIVATE
     hyper_muduo
     GTest::gtest
     GTest::gtest_main
 )
 
-enable_testing()
-add_test(NAME HyperMuduoGTests COMMAND HyperMuduoGTests)
+add_test(NAME HyperMuduoAllTests COMMAND HyperMuduoAllTests)
