@@ -4,6 +4,7 @@
 #include "net/TimerQueue.hpp"
 #include <atomic>
 #include <chrono>
+#include <memory>
 #include <thread>
 
 TEST(TimerTest, OneShot) {
@@ -32,30 +33,36 @@ TEST(TimerTest, OneShot) {
 
 TEST(TimerTest, RepeatAndCancel) {
     hyperMuduo::net::EventLoop loop;
-    hyperMuduo::net::TimerQueue queue(loop);
     std::atomic<int> count{0};
 
-    hyperMuduo::net::TimerId timer_id(0);
-    timer_id = queue.addTimer(
-        [&count]() {
+    // Use a pointer wrapper to break the initialization dependency
+    struct TimerData {
+        hyperMuduo::net::TimerId timer_id{0};
+    };
+    auto data = std::make_shared<TimerData>();
+
+    data->timer_id = loop.runEvery(
+        std::chrono::milliseconds(30),
+        [data, &count, &loop]() {
             ++count;
-        },
-        std::chrono::steady_clock::now() + std::chrono::milliseconds(30),
-        std::chrono::milliseconds(30)
+            // Cancel after 3 firings
+            if (count.load() >= 3) {
+                loop.cancelTimer(data->timer_id);
+            }
+        }
     );
 
     // Add a quit timer
-    queue.addTimer(
+    loop.runAfter(
+        std::chrono::milliseconds(200),
         [&]() {
             loop.quit();
-        },
-        std::chrono::steady_clock::now() + std::chrono::milliseconds(200),
-        std::chrono::milliseconds(0)
+        }
     );
 
     loop.loop();
-    // Should fire at least once in 200ms with 30ms interval
-    EXPECT_GE(count.load(), 1);
+    // Should fire exactly 3 times before being cancelled
+    EXPECT_EQ(count.load(), 3);
 }
 
 TEST(TimerTest, CrossThreadAdd) {

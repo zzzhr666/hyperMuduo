@@ -63,11 +63,13 @@ void hyperMuduo::net::TimerQueue::handleExpiredTimers_() {
         if (auto it = timers_.find(timer_sequence); it != timers_.end()) {
             auto& timer = it->second;
             timer->runCallback();
-            if (timer->isRepeated()) {
-                timer->restart();
-                timer_queue_.push({timer->expiration(), timer_sequence});
-            } else {
-                timers_.erase(timer_sequence);
+            if (timers_.contains(timer_sequence)) {
+                if (timer->isRepeated()) {
+                    timer->restart();
+                    timer_queue_.emplace(timer->expiration(), timer_sequence);
+                } else {
+                    timers_.erase(timer_sequence);
+                }
             }
         }
     }
