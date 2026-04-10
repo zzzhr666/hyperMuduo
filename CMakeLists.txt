@@ -35,7 +35,7 @@ set(NET_SOURCE
         net/Socket.cpp
         net/Socket.hpp
         net/InetAddress.cpp
-        net/InetAddress.hpp
+        net/TcpServer.cpp
 
 )
 

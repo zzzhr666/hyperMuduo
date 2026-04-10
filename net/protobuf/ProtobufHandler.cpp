@@ -24,5 +24,5 @@ void hyperMuduo::net::ProtobufHandler::OnMessage(const TcpConnectionPtr& connect
 }
 
 void hyperMuduo::net::ProtobufHandler::Send(const TcpConnectionPtr& connection, const google::protobuf::Message& msg) {
-    Codec::Encode(msg, connection->outputBuffer());
+    Codec::Encode(msg, connection->sendBuffer());
 }

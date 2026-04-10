@@ -40,7 +40,7 @@ hyperMuduo::net::EventLoop::EventLoop()
         SPDLOG_CRITICAL("Another EventLoop {} exists in this thread {}", fmt::ptr(t_current_thread_loop), thread_id_);
         std::abort();
     }
-    wakeup_channel_->setReadCallback([this]() {
+    wakeup_channel_->setReadCallback([this](std::chrono::system_clock::time_point when) {
         uint64_t n;
         ssize_t nr = ::read(wakeup_fd_, &n, sizeof(n));
         if (nr != sizeof(n)) {
@@ -66,7 +66,7 @@ void hyperMuduo::net::EventLoop::loop() {
             ready_channels_.clear();
             poller_->poll(kPollTime, ready_channels_);
             for (auto* channel: ready_channels_) {
-                channel->handleEvent();
+                channel->handleEvent(std::chrono::system_clock::now());
             }
             executePendingTasks();
         }
@@ -135,8 +135,10 @@ void hyperMuduo::net::EventLoop::runInLoop(std::function<void()> callback) {
     }
 }
 
-void hyperMuduo::net::EventLoop::queueInLoop(std::function<void()> callback) { {
-        std::lock_guard<std::mutex> lock(task_mutex_);
+void hyperMuduo::net::EventLoop::queueInLoop(std::function<void()> callback) {
+    //lock scope
+    {
+        std::unique_lock<std::mutex> lock(task_mutex_);
         task_queue_.push_back(std::move(callback));
     }
 

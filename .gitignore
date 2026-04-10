@@ -1,4 +1,5 @@
 # Build directories and generated files
+.*/
 cmake-build-*/
 build/
 out/
@@ -12,7 +13,7 @@ install_manifest.txt
 CTestTestfile.cmake
 Testing/
 
-# Object, library, binary, and debug artifacts
+# Objects, libraries, binaries, and debug artifacts
 *.o
 *.obj
 *.lo

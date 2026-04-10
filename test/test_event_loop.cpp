@@ -12,7 +12,7 @@ TEST(EventLoopTest, SingleChannelDispatch) {
     hyperMuduo::net::EventLoop loop;
     hyperMuduo::net::Channel channel(loop, fds[0]);
     std::atomic<bool> handled{false};
-    channel.setReadCallback([&]() {
+    channel.setReadCallback([&](std::chrono::system_clock::time_point) {
         char c = 0;
         ::read(fds[0], &c, 1);
         handled = true;
@@ -44,7 +44,7 @@ TEST(EventLoopTest, MultiChannelDispatch) {
     hyperMuduo::net::Channel ch2(loop, p2[0]);
     std::atomic<int> handled_count{0};
 
-    ch1.setReadCallback([&]() {
+    ch1.setReadCallback([&](std::chrono::system_clock::time_point) {
         char c = 0;
         ::read(p1[0], &c, 1);
         ++handled_count;
@@ -52,7 +52,7 @@ TEST(EventLoopTest, MultiChannelDispatch) {
             loop.quit();
         }
     });
-    ch2.setReadCallback([&]() {
+    ch2.setReadCallback([&](std::chrono::system_clock::time_point) {
         char c = 0;
         ::read(p2[0], &c, 1);
         ++handled_count;

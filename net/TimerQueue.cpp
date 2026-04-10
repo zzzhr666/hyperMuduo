@@ -11,7 +11,7 @@ hyperMuduo::net::TimerQueue::TimerQueue(EventLoop& loop)
       timer_fd_(::timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK | TFD_CLOEXEC)),
       timer_channel_(loop, timer_fd_) {
     assertInLoopThread();
-    timer_channel_.setReadCallback([this]() {
+    timer_channel_.setReadCallback([this](std::chrono::system_clock::time_point) {
         handleExpiredTimers_();
     });
     timer_channel_.listenTillReadable();

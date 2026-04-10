@@ -44,6 +44,24 @@ add_hyper_test(SocketTests test_socket.cpp)
 # Acceptor 测试
 add_hyper_test(AcceptorTests test_acceptor.cpp)
 
+# TcpServer 集成测试
+add_hyper_test(TcpServerTests test_tcpserver.cpp)
+
+# TcpServer 高级应用测试
+add_hyper_test(TcpServerAdvancedTests test_tcpserver_advanced.cpp)
+
+# TcpConnection 生命周期测试
+add_hyper_test(TcpConnectionTests test_tcpconnection.cpp)
+
+# Buffer 网络IO测试
+add_hyper_test(BufferIntegrationTests test_buffer_integration.cpp)
+
+# Channel 事件管理测试
+add_hyper_test(ChannelTests test_channel.cpp)
+
+# ProtobufHandler 完整流程测试
+add_hyper_test(ProtobufHandlerTests test_protobuf_handler.cpp)
+
 # ==================== 汇总大测试 ====================
 # 将所有测试文件合并为一个可执行文件
 add_executable(HyperMuduoAllTests
@@ -57,6 +75,12 @@ add_executable(HyperMuduoAllTests
     test_inetaddress.cpp
     test_socket.cpp
     test_acceptor.cpp
+    test_tcpserver.cpp
+    test_tcpserver_advanced.cpp
+    test_tcpconnection.cpp
+    test_buffer_integration.cpp
+    test_channel.cpp
+    test_protobuf_handler.cpp
 )
 
 target_link_libraries(HyperMuduoAllTests

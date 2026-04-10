@@ -1,21 +1,68 @@
 #pragma once
 #include <any>
 #include <memory>
-#include "Buffer.hpp"
-
+#include <atomic>
+#include <chrono>
+#include <functional>
+#include "InetAddress.hpp"
 namespace hyperMuduo::net {
+    class EventLoop;
+    class Channel;
+    class Buffer;
+    class Socket;
     class TcpConnection : public std::enable_shared_from_this<TcpConnection> {
     public:
+        using ConnectionCallback = std::function<void(const std::shared_ptr<TcpConnection>&)>;
+        using MessageCallback = std::function<void(const std::shared_ptr<TcpConnection>&,
+                                                   Buffer&,
+                                                   std::chrono::system_clock::time_point)>;
+        using CloseCallback = std::function<void(const std::shared_ptr<TcpConnection>&)>;
+        TcpConnection(EventLoop& loop,std::string_view name,Socket socket,InetAddress local_addr,InetAddress peer_addr);
         TcpConnection(const TcpConnection&) = delete;
         TcpConnection(TcpConnection&&) = delete;
         TcpConnection& operator=(const TcpConnection&) = delete;
         TcpConnection& operator=(TcpConnection&&) = delete;
 
-        void Shutdown();
+        std::string getName() {
+            return name_;
+        }
+        void shutdown();
 
-        void Send(Buffer& buffer);
+        void send(Buffer& buffer);
 
-        Buffer& outputBuffer();
+        void send(std::string msg);
+
+        void sendInLoop(const std::string& msg);
+
+        void sendInLoop(const char* msg,size_t size);
+
+        void sendInLoop(Buffer& buffer);
+
+
+        bool connected()const {
+            return state_ == State::Connected;
+        }
+
+        void shutdownInLoop();
+
+        Buffer& sendBuffer();
+        Buffer& receiveBuffer();
+
+
+
+        void setMessageCallback(MessageCallback cb) {
+            message_callback_ = std::move(cb);
+        }
+        void setConnectionCallback(ConnectionCallback cb) {
+            connection_callback_ = std::move(cb);
+        }
+
+        void setCloseCallback(CloseCallback cb) {
+            close_callback_ = std::move(cb);
+        }
+        void connectionEstablished();
+
+        void connectionDestroyed();
 
         template<typename T>
         bool hasContext() const {
@@ -27,9 +74,6 @@ namespace hyperMuduo::net {
             return std::any_cast<T&>(context_);
         }
 
-        /**
-         * judge hasContext<T> before getContextAs
-         **/
         template<typename T>
         T& getContextAs() {
             return std::any_cast<T&>(context_);
@@ -38,8 +82,39 @@ namespace hyperMuduo::net {
         void setContext(std::any context);
 
     private:
-        std::unique_ptr<Buffer> output_buffer_;
+        std::string getState() const;
+
+        enum class State {
+            Connecting,
+            Connected,
+            Disconnected,
+            Disconnecting
+        };
+
+        void setState(State state) {
+            state_ = state;
+        }
+
+        void handleReadable(std::chrono::system_clock::time_point time);
+        void handleWritable();
+        void handleClose();
+        void handleError();
+
+        EventLoop& loop_;
+        std::string name_;
+        std::atomic<State> state_;
+        std::unique_ptr<Socket> socket_;
+        std::unique_ptr<Channel> channel_;
+        InetAddress local_address_;
+        InetAddress peer_address_;
+        std::unique_ptr<Buffer> receive_buffer_;
+        std::unique_ptr<Buffer> send_buffer_;
+        MessageCallback message_callback_;
+        ConnectionCallback connection_callback_;
+        CloseCallback close_callback_;
+
         std::any context_;
+
     };
 
     using TcpConnectionPtr = std::shared_ptr<TcpConnection>;

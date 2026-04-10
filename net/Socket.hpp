@@ -42,6 +42,14 @@ namespace hyperMuduo::net {
 
         void setKeepAlive();
 
+        InetAddress getLocalAddress()const;
+
+        InetAddress getPeerAddress()const;
+
+        int getSocketError()const;
+
+        void shutdownWrite();
+
         ~Socket();
 
     private:

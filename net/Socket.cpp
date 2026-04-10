@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
+#include <system_error>
 
 hyperMuduo::net::Socket::Socket()
     : socket_fd_(socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,IPPROTO_TCP)) {
@@ -40,7 +41,7 @@ void hyperMuduo::net::Socket::invalidate() {
 hyperMuduo::net::Socket hyperMuduo::net::Socket::accept(InetAddress& addr) {
     sockaddr_in* addr_in = addr.getSockAddrInMutable();
     socklen_t length = sizeof(sockaddr_in);
-    int conn_fd = accept4(socket_fd_, reinterpret_cast<sockaddr*>(addr_in),&length, SOCK_NONBLOCK | SOCK_CLOEXEC);
+    int conn_fd = accept4(socket_fd_, reinterpret_cast<sockaddr*>(addr_in), &length, SOCK_NONBLOCK | SOCK_CLOEXEC);
     if (conn_fd >= 0) {
         return Socket(conn_fd);
     }
@@ -80,6 +81,45 @@ void hyperMuduo::net::Socket::setReusePort() {
 void hyperMuduo::net::Socket::setKeepAlive() {
     int optval = 1;
     ::setsockopt(socket_fd_,SOL_SOCKET,SO_KEEPALIVE, &optval, sizeof(int));
+}
+
+hyperMuduo::net::InetAddress hyperMuduo::net::Socket::getLocalAddress() const {
+    sockaddr_in local;
+    socklen_t length = sizeof(local);
+    std::memset(&local, 0, sizeof(local));
+    int ret = getsockname(socket_fd_, reinterpret_cast<sockaddr*>(&local), &length);\
+    if (ret == -1) {
+        SPDLOG_ERROR("Failed to getsockname,msg:{}", std::system_category().message(errno));
+
+    }
+    return InetAddress(local);
+}
+
+hyperMuduo::net::InetAddress hyperMuduo::net::Socket::getPeerAddress() const {
+    sockaddr_in peer;
+    socklen_t length = sizeof(peer);
+    int ret = getpeername(socket_fd_, reinterpret_cast<sockaddr*>(&peer), &length);
+    if (ret == -1) {
+        SPDLOG_ERROR("Failed to getpeername,msg:{}", std::system_category().message(errno));
+    }
+    return InetAddress(peer);
+}
+
+int hyperMuduo::net::Socket::getSocketError() const {
+    int optval = 1;
+    socklen_t length = sizeof(optval);
+
+    if (::getsockopt(socket_fd_, SOL_SOCKET, SO_ERROR, &optval, &length) < 0) {
+        return errno;
+    } else {
+        return optval;
+    }
+}
+
+void hyperMuduo::net::Socket::shutdownWrite() {
+    if (::shutdown(socket_fd_, SHUT_RDWR) == -1) {
+        SPDLOG_ERROR("Socket::shutdownWrite error:{}",std::system_category().message(errno));
+    }
 }
 
 

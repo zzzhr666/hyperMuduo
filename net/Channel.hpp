@@ -1,35 +1,46 @@
 #pragma once
 #include <functional>
 #include <sys/poll.h>
-
+#include <chrono>
+#include <memory>
 
 namespace hyperMuduo::net {
     class EventLoop;
+    class TcpConnection;
 
     class Channel {
     public:
         using EventCallback = std::function<void()>;
+        using ReadEventCallback = std::function<void(std::chrono::system_clock::time_point)>;
+
         static constexpr int NOT_FILL = -1;
 
         Channel(const Channel&) = delete;
+
         Channel& operator=(const Channel&) = delete;
+
         Channel(Channel&&) = delete;
+
         Channel& operator=(Channel&&) = delete;
 
         Channel(EventLoop& loop, int fd);
 
-        void handleEvent();
+        void handleEvent(std::chrono::system_clock::time_point tp);
 
-        void setReadCallback(EventCallback cb) {
-            readCallback_ = std::move(cb);
+        void handleEventWithGuard();
+
+        void tie(const std::shared_ptr<TcpConnection>& conn);
+
+        void setReadCallback(ReadEventCallback cb) {
+            read_callback_ = std::move(cb);
         }
 
         void setWriteCallback(EventCallback cb) {
-            writeCallback_ = std::move(cb);
+            write_callback_ = std::move(cb);
         }
 
         void setErrorCallback(EventCallback cb) {
-            errorCallback_ = std::move(cb);
+            error_callback_ = std::move(cb);
         }
 
         [[nodiscard]] int getFd() const {
@@ -62,6 +73,8 @@ namespace hyperMuduo::net {
             notifyLoop();
         }
 
+
+
         void ignoreReadable() {
             events_ &= ~kReadEvent;
             notifyLoop();
@@ -75,6 +88,10 @@ namespace hyperMuduo::net {
         void ignoreAll() {
             events_ = kNoneEvent;
             notifyLoop();
+        }
+
+        bool isWriting() const {
+            return events_ & kWriteEvent;
         }
 
         EventLoop& getOwnerLoop() const {
@@ -107,8 +124,12 @@ namespace hyperMuduo::net {
 
         int index_; //used by poller
 
-        EventCallback readCallback_;
-        EventCallback writeCallback_;
-        EventCallback errorCallback_;
+        std::weak_ptr<TcpConnection> parent_;
+        bool tied_;
+
+        ReadEventCallback read_callback_;
+        EventCallback write_callback_;
+        EventCallback error_callback_;
+        EventCallback close_callback_;
     };
 }
