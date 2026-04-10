@@ -52,6 +52,8 @@ namespace hyperMuduo::net {
         //网络IO
         ssize_t readFd(int fd, int* savedErrno);
 
+        ssize_t writeFd(int fd, int* savedErrno);
+
     private:
         char* begin();
 

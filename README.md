@@ -88,7 +88,6 @@ HyperMuduo/
 | 回调注册 | `boost::bind` | Lambda 捕获 | 更清晰的捕获语义 |
 | Buffer 双缓冲临时区 | 裸 `char[]` 数组 | `std::array<char, 65536>` | 类型安全 |
 | Protobuf 链路 | `ProtobufCodec` 单体 | `Codec` + `Dispatcher` + `ProtobufHandler` 拆分 | 职责单一，易测试 |
-| 输出缓冲（TcpConnection） | 直接成员 `Buffer outputBuffer_` | `unique_ptr<Buffer>` 延迟初始化 | 连接不活跃时节省内存 |
 
 以下按模块逐一展开。
 
@@ -244,8 +243,8 @@ HyperMuduo 将原版的 `ProtobufCodec` 拆分为三个职责单一的组件：
 - [x] 回调注册（读 / 写 / 错误）
 - [x] `handleEvent()` 按 `revents` 分发
 - [x] 通过 `notifyLoop()` 回写到 loop / poller
-- [ ] 增加连接关闭回调（`closeCallback`）
-- [ ] 增加防悬挂策略（`tie` 机制）
+- [x] 增加连接关闭回调（`closeCallback`）→ 在 TcpConnection 层面实现
+- [x] 增加防悬挂策略（`tie` 机制）
 
 #### B3. Poller（poll 版本）
 
@@ -294,7 +293,7 @@ HyperMuduo 将原版的 `ProtobufCodec` 拆分为三个职责单一的组件：
 - [x] `append/retrieve` 基础接口
 - [x] `makeSpace` 扩容与数据搬移
 - [x] `readFd` 双缓冲读取（`readv`）
-- [ ] 增加 writeFd / send 路径
+- [x] `writeFd` 写回路径（`write` + 部分写入处理）
 - [x] 增加单测覆盖边界情况（空包、大包、反复扩容）
 
 #### C2. Timer / TimerQueue
@@ -303,7 +302,7 @@ HyperMuduo 将原版的 `ProtobufCodec` 拆分为三个职责单一的组件：
 - [x] TimerQueue：基于 `timerfd` + `priority_queue` 的定时器队列
 - [x] EventLoop 暴露 `runAt`/`runAfter`/`runEvery`/`cancelTimer` 接口
 - [x] 配套单测（22 个测试全部通过，覆盖一次性 / 重复 / 取消 / 跨线程 / 压力场景）
-- [ ] TimerQueue 跨线程安全性进一步完善
+- [x] TimerQueue 跨线程安全性（通过 `runInLoop` 延迟 mutation 实现）
 
 #### C3. TcpConnection
 
