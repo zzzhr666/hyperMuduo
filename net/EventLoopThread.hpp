@@ -13,7 +13,7 @@ namespace hyperMuduo::net {
     public:
         using ThreadInitCallback = std::function<void(EventLoop&)>;
 
-        explicit EventLoopThread(ThreadInitCallback cb, std::string_view thread_name);
+        explicit EventLoopThread( std::string_view thread_name,ThreadInitCallback cb = {});
 
         ~EventLoopThread();
 

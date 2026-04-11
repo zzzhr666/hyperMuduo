@@ -32,6 +32,10 @@ namespace hyperMuduo::net {
 
         Socket accept(InetAddress& addr);
 
+        void setTcpNoDelay(bool on);
+
+        void setKeepAlive(bool on);
+
         void bindAddress(const InetAddress& addr);
 
         void listen();

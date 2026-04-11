@@ -47,6 +47,9 @@ add_hyper_test(AcceptorTests test_acceptor.cpp)
 # TcpServer 集成测试
 add_hyper_test(TcpServerTests test_tcpserver.cpp)
 
+# TcpServer 多线程测试
+add_hyper_test(MultiThreadTcpServerTests test_tcpserver_multithread.cpp)
+
 # TcpServer 高级应用测试
 add_hyper_test(TcpServerAdvancedTests test_tcpserver_advanced.cpp)
 
@@ -76,6 +79,7 @@ add_executable(HyperMuduoAllTests
     test_socket.cpp
     test_acceptor.cpp
     test_tcpserver.cpp
+    test_tcpserver_multithread.cpp
     test_tcpserver_advanced.cpp
     test_tcpconnection.cpp
     test_buffer_integration.cpp

@@ -121,6 +121,23 @@ cmake --build cmake-build-debug
 - **ConsecutiveMessageProcessing**: Buffer 中有多条消息时的连续处理
 - **SendMessageThroughConnection**: 通过 TcpConnection 发送 Protobuf 消息
 
+#### `test_tcpserver_multithread.cpp` (14 个测试)
+测试多线程 TcpServer 的完整功能与线程安全性。
+- **ConnectionsDistributedToWorkers**: 验证连接被轮询分配到不同 Worker 线程
+- **MultiThreadEchoServer**: 4 线程 Echo 服务验证
+- **HighConcurrencyConnections**: 10 连接高并发与优雅断开
+- **CrossThreadSend**: 主线程向子线程连接主动推送数据
+- **CallbacksRunInWorkerThreads**: 验证所有 I/O 回调在子线程执行（非主线程）
+- **ConnectionContextThreadSafety**: 连接上下文（`std::any`）多线程安全
+- **WriteCompleteCallbackTriggers**: 写完成回调触发验证
+- **StressTestManyConnections**: 50 连接压力测试
+- **LargeDataTransfer**: 1MB 大数据分块传输
+- **DynamicThreadNum**: 动态修改线程数（运行时扩容）
+- **BroadcastToAllConnections**: 从主线程向所有连接广播消息
+- **RapidConnectDisconnect**: 20 连接快速建立并断开
+- **TcpNoDelaySetting**: TCP_NODELAY 设置验证
+- **KeepAliveSetting**: KeepAlive 设置验证
+
 ---
 
 ## 测试统计
@@ -128,20 +145,36 @@ cmake --build cmake-build-debug
 | 类别 | 文件数 | 测试用例数 |
 |------|--------|-----------|
 | 基础组件 | 11 | 55 |
-| 集成与高级 | 5 | 34 |
-| **总计** | **16** | **89** |
+| 集成与高级 | 6 | 48 |
+| **总计** | **17** | **103** |
 
-所有测试均通过，覆盖从基础组件到复杂服务器场景的完整功能链路。
+所有测试均通过，覆盖从基础组件到复杂服务器场景、从单线程到多线程的完整功能链路。
 
 ## 已知 Bug 修复记录
 
 在编写测试过程中发现并修复了以下隐藏 Bug：
 
-1. **TcpServer 忘记调用 connectionEstablished()**  
+1. **TcpServer 忘记调用 connectionEstablished()**
    → 导致连接状态永远停留在 Connecting，无法发送数据
 
-2. **sendInLoop 访问未初始化的 send_buffer_ 空指针**  
+2. **sendInLoop 访问未初始化的 send_buffer_ 空指针**
    → 首次发送数据时 Segmentation Fault（后改为构造时即初始化解决）
 
-3. **connectionDestroyed() 未检查 connection_callback_ 是否为空**  
+3. **connectionDestroyed() 未检查 connection_callback_ 是否为空**
    → 未设置连接回调时，连接销毁会崩溃
+
+4. **多线程模式下 TcpConnection 构造函数断言失败**
+   → TcpConnection 对象在主线程创建，但构造函数调用 `assertInLoopThread()` 检查子线程
+   → 修复：移除构造函数断言，将 Channel 注册延迟到 `connectionEstablished()`（在子线程执行）
+
+5. **跨线程删除连接时任务投递到错误的 Loop**
+   → `removeConnectionInLoop` 中使用 `loop_.queueInLoop`（主线程）执行 `connectionDestroyed()`
+   → 修复：改为 `conn->getLoop().queueInLoop()`，确保清理任务投递回子线程
+
+6. **高水位回调从未被触发**
+   → 设置了 `high_water_mark_` 但代码中从未检查并触发回调
+   → 修复：在 `sendInLoop()` 中添加高水位检查逻辑
+
+7. **TcpServer 的写完成回调未传递给 TcpConnection**
+   → `setWriteCompleteCallback()` 设置了但没传给子连接
+   → 修复：在 TcpServer 新连接回调中添加 `conn->setWriteCompleteCallback()`

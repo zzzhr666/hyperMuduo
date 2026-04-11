@@ -23,19 +23,16 @@ set(NET_SOURCE
         net/Buffer.cpp
         net/TcpConnection.cpp
         net/EventLoop.cpp
-        net/EventLoop.hpp
         net/Channel.cpp
-        net/Channel.hpp
         net/Poller.cpp
         net/Timer.cpp
         net/TimerQueue.cpp
-        net/TimerQueue.hpp
         net/EventLoopThread.cpp
         net/Acceptor.cpp
         net/Socket.cpp
-        net/Socket.hpp
         net/InetAddress.cpp
         net/TcpServer.cpp
+        net/EventLoopThreadPool.cpp
 
 )
 
@@ -68,5 +65,8 @@ target_link_libraries(hyper_muduo
 )
 
 
-
 add_subdirectory(test)
+
+add_executable(simpletest main.cpp)
+
+target_link_libraries(simpletest hyper_muduo)

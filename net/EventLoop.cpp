@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/poll.h>
 #include <sys/eventfd.h>
+#include <sys/signal.h>
 
 #include "Channel.hpp"
 #include "Poller.hpp"
@@ -21,6 +22,19 @@ namespace {
         }
         return event_fd;
     }
+
+    class IgnoreSigPipe {
+        public:
+        IgnoreSigPipe() {
+            struct sigaction sa;
+            sa.sa_handler = SIG_IGN;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            ::sigaction(SIGPIPE, &sa, nullptr);
+
+        }
+    };
+    IgnoreSigPipe ignore_sigpipe;
 }
 
 

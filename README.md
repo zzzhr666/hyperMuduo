@@ -37,7 +37,8 @@ HyperMuduo/
 │   │   ├── Timer.hpp/cpp           # 定时器对象
 │   │   └── TimerQueue.hpp/cpp      # 定时器队列（最小堆 + 惰性删除）
 │   ├── 线程模型
-│   │   └── EventLoopThread.hpp/cpp # 单线程 EventLoop 封装
+│   │   ├── EventLoopThread.hpp/cpp # 单线程 EventLoop 封装
+│   │   └── EventLoopThreadPool.hpp/cpp # 多线程 EventLoop 线程池
 │   ├── 缓冲与数据
 │   │   └── Buffer.hpp/cpp          # 应用层收发缓冲区
 │   └── protobuf/                   # Protocol Buffers 编解码链路
@@ -61,6 +62,7 @@ HyperMuduo/
 │   ├── test_acceptor.cpp           # Acceptor 测试
 │   ├── test_tcpserver.cpp          # TcpServer 基础集成测试
 │   ├── test_tcpserver_advanced.cpp # TcpServer 高级场景测试
+│   ├── test_tcpserver_multithread.cpp # TcpServer 多线程测试（14个测试）
 │   ├── test_tcpconnection.cpp      # TcpConnection 生命周期测试
 │   ├── test_buffer_integration.cpp # Buffer 网络IO集成测试
 │   ├── test_channel.cpp            # Channel 事件管理测试
@@ -69,7 +71,7 @@ HyperMuduo/
 └── README.md                       # 项目文档
 ```
 
-**测试覆盖**：89 个测试，覆盖 16 个测试套件，包括 Buffer、Codec、Protobuf、EventLoop、Timer、TimerQueue、EventLoopThread、InetAddress、Socket、Acceptor、TcpServer（基础+高级）、TcpConnection、Channel、ProtobufHandler
+**测试覆盖**：103 个测试，覆盖 17 个测试套件，包括 Buffer、Codec、Protobuf、EventLoop、Timer、TimerQueue、EventLoopThread、InetAddress、Socket、Acceptor、TcpServer（基础+高级+多线程）、TcpConnection、Channel、ProtobufHandler
 
 ---
 
@@ -319,12 +321,25 @@ HyperMuduo 将原版的 `ProtobufCodec` 拆分为三个职责单一的组件：
 
 - [x] 组合 `Acceptor` 管理监听与连接生命周期
 - [x] 自动创建 `TcpConnection` 并注册回调
-- [x] 连接建立时调用 `connectionEstablished()`
+- [x] 连接建立时调用 `connectionEstablished()`（通过 `runInLoop` 投递到子线程）
 - [x] 连接断开时自动清理并调用 `connectionDestroyed()`
 - [x] 消息回调透传（`setMessageCallback`）
 - [x] 连接回调（`setConnectionCallback`）
+- [x] 写完成回调（`setWriteCompleteCallback`）
+- [x] 高水位回调（`setHighWaterMarkCallback`）
 - [x] 基础集成测试（5 个测试：启停、回声服务、多连接、回调触发、数据接收）
 - [x] 高级场景测试（6 个测试：聊天室广播、命令响应服务器、大数据流、文件传输、分片消息组装、连接数限制）
+
+#### C5. EventLoopThreadPool（多线程 Reactor）
+
+- [x] 线程池创建与管理（`EventLoopThread` 数组）
+- [x] 轮询算法分配连接到不同 Worker 线程（`getNextLoop()`）
+- [x] 主线程与子线程 EventLoop 分离
+- [x] 动态线程数设置（`setThreadNum()`）
+- [x] TcpServer 多线程模式（连接分配到 Worker 线程）
+- [x] 跨线程连接删除（`removeConnection` + `removeConnectionInLoop`）
+- [x] 跨线程数据发送（`conn->send()` 自动判断线程并投递）
+- [x] 多线程测试（14 个测试：线程分配、Echo 服务、高并发、跨线程发送、回调验证、Context 安全、写完成回调、50 连接压力测试、1MB 大数据传输、广播、快速断开、TCP_NODELAY、KeepAlive）
 
 ### D. Protobuf 编解码链路
 
@@ -356,14 +371,6 @@ HyperMuduo 将原版的 `ProtobufCodec` 拆分为三个职责单一的组件：
 
 ---
 
-## 下一步计划
-
-1. 将 Poller 升级为 `epoll` 实现
-2. 增加 EventLoopThreadPool 支持多线程 Reactor
-3. 搭建最小 Echo Server 示例程序
-4. 增加 CI/CD 流程（构建检查 + 自动化测试）
-5. 增加静态检查（`clang-tidy`）
-6. 编写 Reactor 流程图与架构文档
 
 ## 致谢
 

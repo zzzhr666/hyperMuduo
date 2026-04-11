@@ -50,6 +50,7 @@ Testing/
 *~
 .qwen/
 GEMINI.md
+QWEN.md
 
 # Local tooling/runtime folders
 .cursor/

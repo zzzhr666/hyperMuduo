@@ -24,12 +24,13 @@ namespace hyperMuduo::net {
           local_address_(std::move(local_addr)),
           peer_address_(std::move(peer_addr)),
           receive_buffer_(std::make_unique<Buffer>()),
-    send_buffer_(std::make_unique<Buffer>()){
-        loop_.assertInLoopThread();
+          send_buffer_(std::make_unique<Buffer>()) {
+        // 注意：多线程模式下，TcpConnection 对象由主线程创建
+        // 所以这里不能 assertInLoopThread()，也不能注册 Channel
         channel_->setReadCallback([this](std::chrono::system_clock::time_point tp) {
             handleReadable(tp);
         });
-        channel_->listenTillReadable();
+        // listenTillReadable() 移至 connectionEstablished() 中在子线程执行
     }
 
     void TcpConnection::shutdown() {
@@ -41,6 +42,14 @@ namespace hyperMuduo::net {
         }
     }
 
+    void TcpConnection::setTcpNoDelay(bool on) {
+        socket_->setTcpNoDelay(on);
+    }
+
+    void TcpConnection::setKeepAlive(bool on) {
+        socket_->setKeepAlive(on);
+    }
+
     void TcpConnection::send(Buffer& buffer) {
         if (state_ == State::Connected) {
             if (loop_.isInLoopThread()) {
@@ -49,8 +58,8 @@ namespace hyperMuduo::net {
                 // 跨线程：将用户 buffer 的数据转移到堆上，避免拷贝
                 auto msg = std::make_shared<Buffer>();
                 msg->swap(buffer); // 零拷贝交换
-                
-                loop_.runInLoop([self = shared_from_this(), msg]{
+
+                loop_.runInLoop([self = shared_from_this(), msg] {
                     self->sendInLoop(*msg);
                 });
             }
@@ -70,7 +79,7 @@ namespace hyperMuduo::net {
     }
 
     void TcpConnection::sendInLoop(const std::string& msg) {
-        sendInLoop(msg.data(),msg.size());
+        sendInLoop(msg.data(), msg.size());
     }
 
     void TcpConnection::sendInLoop(const char* msg, size_t size) {
@@ -81,18 +90,28 @@ namespace hyperMuduo::net {
             if (n_write >= 0) {
                 if (n_write < size) {
                     SPDLOG_TRACE("Writing task don't finish.");
+                } else if (write_complete_callback_) {
+                    loop_.queueInLoop([self = shared_from_this()]() {
+                        self->write_complete_callback_(self);
+                    });
                 }
             } else {
                 n_write = 0;
                 if (errno != EWOULDBLOCK) {
-                    SPDLOG_ERROR("Write error: {}", strerror(errno));
+                    SPDLOG_ERROR("Write error: {}", std::system_category().message(errno));
                 }
             }
         }
-        if (n_write <size) {
-            send_buffer_->append(msg + n_write,size - n_write);
+        if (n_write < size) {
+            send_buffer_->append(msg + n_write, size - n_write);
             if (!channel_->isWriting()) {
                 channel_->listenTillWritable();
+            }
+            // 检查高水位
+            if (high_water_callback_ && send_buffer_->readableBytes() >= high_water_mark_) {
+                loop_.queueInLoop([self = shared_from_this()]() {
+                    self->high_water_callback_(self->shared_from_this());
+                });
             }
         }
     }
@@ -109,7 +128,7 @@ namespace hyperMuduo::net {
             } else {
                 n_write = 0;
                 if (errno != EWOULDBLOCK) {
-                    SPDLOG_ERROR("Write error: {}", strerror(errno));
+                    SPDLOG_ERROR("Write error: {}", std::system_category().message(errno));
                 }
             }
         }
@@ -121,6 +140,13 @@ namespace hyperMuduo::net {
             } else {
                 send_buffer_->append(buffer.peek(), buffer.readableBytes());
                 buffer.retrieveAll();
+            }
+
+            // 检查高水位
+            if (high_water_callback_ && send_buffer_->readableBytes() >= high_water_mark_) {
+                loop_.queueInLoop([self = shared_from_this()]() {
+                    self->high_water_callback_(self);
+                });
             }
 
             if (!channel_->isWriting()) {
@@ -211,11 +237,16 @@ namespace hyperMuduo::net {
     void TcpConnection::handleWritable() {
         loop_.assertInLoopThread();
         if (channel_->isWriting()) {
-            ssize_t n_write = ::write(channel_->getFd(),send_buffer_->peek(), send_buffer_->readableBytes());
-            if (n_write >0) {
+            ssize_t n_write = ::write(channel_->getFd(), send_buffer_->peek(), send_buffer_->readableBytes());
+            if (n_write > 0) {
                 send_buffer_->retrieve(n_write);
-                if (send_buffer_->readableBytes()==0) {
+                if (send_buffer_->readableBytes() == 0) {
                     channel_->ignoreWritable();
+                    if (write_complete_callback_) {
+                        loop_.queueInLoop([self = shared_from_this()]() {
+                            self->write_complete_callback_(self);
+                        });
+                    }
                     if (state_ == State::Disconnecting) {
                         shutdownInLoop();
                     }
@@ -232,7 +263,7 @@ namespace hyperMuduo::net {
 
     void TcpConnection::handleClose() {
         loop_.assertInLoopThread();
-        if (state_!=State::Connected && state_ != State::Disconnecting) {
+        if (state_ != State::Connected && state_ != State::Disconnecting) {
             SPDLOG_CRITICAL("state error:{}", getState());
             std::abort();
         }

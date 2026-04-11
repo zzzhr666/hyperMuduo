@@ -105,7 +105,7 @@ TEST(ChannelTest, IgnoreEvents) {
 
     // 写入数据
     const char* msg = "This should not trigger";
-    write(fds[1], msg, 25);
+    write(fds[1], msg, sizeof("This should not trigger") - 1);  // 24 bytes, excluding null terminator
 
     // 运行循环
     std::thread quitter([&]() {

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
-#include <system_error>
+#include <netinet/tcp.h>
 
 hyperMuduo::net::Socket::Socket()
     : socket_fd_(socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,IPPROTO_TCP)) {
@@ -50,6 +50,20 @@ hyperMuduo::net::Socket hyperMuduo::net::Socket::accept(InetAddress& addr) {
         SPDLOG_ERROR("socket accept error: {}", std::system_category().message(errno));
     }
     return Socket{INVALID_FD};
+}
+
+void hyperMuduo::net::Socket::setTcpNoDelay(bool on) {
+    int optval = on ? 1 : 0;
+    if (::setsockopt(socket_fd_,IPPROTO_TCP,TCP_NODELAY,&optval,sizeof(optval)) < 0) {
+        SPDLOG_ERROR("Failed to set TCP_NODELAY ,error message: {}", std::system_category().message(errno));
+    }
+}
+
+void hyperMuduo::net::Socket::setKeepAlive(bool on) {
+    int optval = on ? 1 : 0;
+    if (::setsockopt(socket_fd_,SOL_SOCKET,SO_KEEPALIVE,&optval,sizeof(optval))<0) {
+        SPDLOG_ERROR("Failed to set SO_KEEPALIVE,error message: {}", std::system_category().message(errno));
+    }
 }
 
 void hyperMuduo::net::Socket::bindAddress(const InetAddress& addr) {
@@ -118,7 +132,7 @@ int hyperMuduo::net::Socket::getSocketError() const {
 
 void hyperMuduo::net::Socket::shutdownWrite() {
     if (::shutdown(socket_fd_, SHUT_RDWR) == -1) {
-        SPDLOG_ERROR("Socket::shutdownWrite error:{}",std::system_category().message(errno));
+        SPDLOG_ERROR("Socket::shutdownWrite error:{}", std::system_category().message(errno));
     }
 }
 
