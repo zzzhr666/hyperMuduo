@@ -5,6 +5,7 @@
 #include <spdlog/spdlog.h>
 #include <sys/socket.h>
 #include <netinet/tcp.h>
+#include "InetAddress.hpp"
 
 hyperMuduo::net::Socket::Socket()
     : socket_fd_(socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK | SOCK_CLOEXEC,IPPROTO_TCP)) {
@@ -54,14 +55,14 @@ hyperMuduo::net::Socket hyperMuduo::net::Socket::accept(InetAddress& addr) {
 
 void hyperMuduo::net::Socket::setTcpNoDelay(bool on) {
     int optval = on ? 1 : 0;
-    if (::setsockopt(socket_fd_,IPPROTO_TCP,TCP_NODELAY,&optval,sizeof(optval)) < 0) {
+    if (::setsockopt(socket_fd_,IPPROTO_TCP,TCP_NODELAY, &optval, sizeof(optval)) < 0) {
         SPDLOG_ERROR("Failed to set TCP_NODELAY ,error message: {}", std::system_category().message(errno));
     }
 }
 
 void hyperMuduo::net::Socket::setKeepAlive(bool on) {
     int optval = on ? 1 : 0;
-    if (::setsockopt(socket_fd_,SOL_SOCKET,SO_KEEPALIVE,&optval,sizeof(optval))<0) {
+    if (::setsockopt(socket_fd_,SOL_SOCKET,SO_KEEPALIVE, &optval, sizeof(optval)) < 0) {
         SPDLOG_ERROR("Failed to set SO_KEEPALIVE,error message: {}", std::system_category().message(errno));
     }
 }
@@ -95,6 +96,20 @@ void hyperMuduo::net::Socket::setReusePort() {
 void hyperMuduo::net::Socket::setKeepAlive() {
     int optval = 1;
     ::setsockopt(socket_fd_,SOL_SOCKET,SO_KEEPALIVE, &optval, sizeof(int));
+}
+
+int hyperMuduo::net::Socket::connect(const InetAddress& addr) {
+    int ret = ::connect(socket_fd_,reinterpret_cast<const sockaddr*>(addr.getSockAddrIn()), sizeof(sockaddr_in));
+    int savedErrno = ret == 0? 0 :errno;
+    if (ret == -1) {
+        if (savedErrno == EINPROGRESS) {
+            SPDLOG_INFO("Socket::connect in progress to {}",addr.toIpPort());
+        } else {
+            SPDLOG_ERROR("Socket::connect failed to {},error message:{}",addr.toIpPort(),std::system_category().message(savedErrno));
+        }
+    }
+
+    return savedErrno;
 }
 
 hyperMuduo::net::InetAddress hyperMuduo::net::Socket::getLocalAddress() const {

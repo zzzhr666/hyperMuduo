@@ -33,6 +33,9 @@ set(NET_SOURCE
         net/InetAddress.cpp
         net/TcpServer.cpp
         net/EventLoopThreadPool.cpp
+        net/Connector.cpp
+        net/TcpClient.cpp
+        net/TcpClient.hpp
 
 )
 
@@ -66,7 +69,3 @@ target_link_libraries(hyper_muduo
 
 
 add_subdirectory(test)
-
-add_executable(simpletest main.cpp)
-
-target_link_libraries(simpletest hyper_muduo)

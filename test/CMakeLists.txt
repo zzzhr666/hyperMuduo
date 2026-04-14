@@ -65,6 +65,9 @@ add_hyper_test(ChannelTests test_channel.cpp)
 # ProtobufHandler 完整流程测试
 add_hyper_test(ProtobufHandlerTests test_protobuf_handler.cpp)
 
+# Connector 测试
+add_hyper_test(ConnectorTests test_connector.cpp)
+
 # ==================== 汇总大测试 ====================
 # 将所有测试文件合并为一个可执行文件
 add_executable(HyperMuduoAllTests
@@ -85,6 +88,7 @@ add_executable(HyperMuduoAllTests
     test_buffer_integration.cpp
     test_channel.cpp
     test_protobuf_handler.cpp
+    test_connector.cpp
 )
 
 target_link_libraries(HyperMuduoAllTests

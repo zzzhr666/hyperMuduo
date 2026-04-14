@@ -6,10 +6,10 @@
 #include <thread>
 
 TEST(EventLoopThreadTest, BasicStartAndQuit) {
-    hyperMuduo::net::EventLoopThread thread([](hyperMuduo::net::EventLoop& loop) {
+    hyperMuduo::net::EventLoopThread thread("TestThread-Basic", [](hyperMuduo::net::EventLoop& loop) {
         // Init callback - can set up timers or other components
-    }, "TestThread-Basic");
-    
+    });
+
     hyperMuduo::net::EventLoop& loop = thread.startLoop();
     
     // Give the loop some time to run
@@ -22,10 +22,10 @@ TEST(EventLoopThreadTest, InitCallback) {
     std::atomic<bool> init_called{false};
     
     hyperMuduo::net::EventLoopThread thread(
+        "TestThread-InitCallback",
         [&](hyperMuduo::net::EventLoop& loop) {
             init_called = true;
-        },
-        "TestThread-InitCallback"
+        }
     );
     
     hyperMuduo::net::EventLoop& loop = thread.startLoop();
@@ -43,16 +43,16 @@ TEST(EventLoopThreadTest, RunTaskOnLoopThread) {
     std::thread::id loop_thread_id;
     
     hyperMuduo::net::EventLoopThread thread(
+        "TestThread-RunTask",
         [&](hyperMuduo::net::EventLoop& loop) {
             loop_thread_id = std::this_thread::get_id();
-            
+
             // Schedule a task from within the loop thread
             loop.runInLoop([&]() {
                 task_executed = true;
                 task_in_correct_thread = (std::this_thread::get_id() == loop_thread_id);
             });
-        },
-        "TestThread-RunTask"
+        }
     );
     
     hyperMuduo::net::EventLoop& loop = thread.startLoop();
@@ -70,11 +70,11 @@ TEST(EventLoopThreadTest, RunTaskFromMainThread) { // 改个名字
     std::thread::id loop_thread_id;
 
     hyperMuduo::net::EventLoopThread thread(
+        "TestThread-RunTaskFromMain",
         [&](hyperMuduo::net::EventLoop& loop) {
             // 仅仅记录后台线程的 ID
             loop_thread_id = std::this_thread::get_id();
-        },
-        "TestThread-RunTask"
+        }
     );
 
     hyperMuduo::net::EventLoop& loop = thread.startLoop();
@@ -95,21 +95,21 @@ TEST(EventLoopThreadTest, MultipleThreads) {
     std::atomic<int> loop_count{0};
     
     hyperMuduo::net::EventLoopThread thread1(
+        "TestThread-1",
         [&](hyperMuduo::net::EventLoop& loop) {
             loop.runAfter(std::chrono::milliseconds(50), [&]() {
                 ++loop_count;
             });
-        },
-        "TestThread-1"
+        }
     );
-    
+
     hyperMuduo::net::EventLoopThread thread2(
+        "TestThread-2",
         [&](hyperMuduo::net::EventLoop& loop) {
             loop.runAfter(std::chrono::milliseconds(50), [&]() {
                 ++loop_count;
             });
-        },
-        "TestThread-2"
+        }
     );
     
     hyperMuduo::net::EventLoop& loop1 = thread1.startLoop();
@@ -126,12 +126,12 @@ TEST(EventLoopThreadTest, DestructorStopsThread) {
     
     {
         hyperMuduo::net::EventLoopThread thread(
+            "TestThread-Destructor",
             [&](hyperMuduo::net::EventLoop& loop) {
                 loop.runEvery(std::chrono::milliseconds(30), [&]() {
                     ++timer_count;
                 });
-            },
-            "TestThread-Destructor"
+            }
         );
         
         hyperMuduo::net::EventLoop& loop = thread.startLoop();

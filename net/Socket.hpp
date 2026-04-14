@@ -1,9 +1,9 @@
 #pragma once
 
-#include "InetAddress.hpp"
+
 
 namespace hyperMuduo::net {
-
+class InetAddress;
     class Socket {
     public:
         static constexpr int INVALID_FD = -1;
@@ -45,6 +45,8 @@ namespace hyperMuduo::net {
         void setReusePort();
 
         void setKeepAlive();
+
+        int connect(const InetAddress& addr);
 
         InetAddress getLocalAddress()const;
 

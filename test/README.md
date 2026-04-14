@@ -113,6 +113,16 @@ cmake --build cmake-build-debug
 - **TieMechanismPlaceholder**: tie 机制占位（已在 TcpConnection 中间接验证）
 - **ErrorCallbackSetup**: 错误回调设置验证
 
+#### `test_tcpclient.cpp` (7 个测试)
+测试 TcpClient 客户端的完整功能与复杂场景。
+- **HighWaterMarkTrigger**: 高水位标记回调测试（验证 API 配置与触发机制）
+- **MessageOrdering**: 消息顺序性测试（使用长度前缀协议保证消息边界）
+- **ConnectionFailureHandling**: 连接失败处理测试（连接不存在服务器时的错误处理）
+- **MultipleConcurrentClients**: 多客户端并发连接测试（5 个客户端同时连接与通信）
+- **LargeDataTransferIntegrity**: 大数据传输完整性测试（50KB 数据发送/接收/校验）
+- **ServerInitiatedClose**: 服务器主动关闭连接测试（验证客户端断开处理）
+- **StopClientTest**: 客户端停止功能测试（验证 stop() 方法安全性）
+
 #### `test_protobuf_handler.cpp` (5 个测试)
 测试 ProtobufHandler 的完整编解码流程。
 - **EncodeDecodeQueryMessage**: 编码/解码 Query 消息循环
@@ -145,10 +155,10 @@ cmake --build cmake-build-debug
 | 类别 | 文件数 | 测试用例数 |
 |------|--------|-----------|
 | 基础组件 | 11 | 55 |
-| 集成与高级 | 6 | 48 |
-| **总计** | **17** | **103** |
+| 集成与高级 | 7 | 55 |
+| **总计** | **18** | **110** |
 
-所有测试均通过，覆盖从基础组件到复杂服务器场景、从单线程到多线程的完整功能链路。
+所有测试均通过，覆盖从基础组件到复杂服务器场景、从单线程到多线程、从服务端到客户端的完整功能链路。
 
 ## 已知 Bug 修复记录
 

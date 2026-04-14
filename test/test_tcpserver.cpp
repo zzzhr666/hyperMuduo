@@ -12,6 +12,7 @@
 
 using namespace hyperMuduo::net;
 
+namespace {
 // 辅助函数：创建客户端TCP连接
 int create_client_connection(uint16_t port) {
     int client_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -45,6 +46,7 @@ std::string recv_data(int fd, size_t max_bytes = 4096) {
     }
     return "";
 }
+} // namespace
 
 // Test 1: 服务器启动和停止
 TEST(TcpServerTest, StartAndStop) {
