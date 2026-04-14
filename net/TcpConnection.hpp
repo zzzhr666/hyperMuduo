@@ -50,6 +50,8 @@ namespace hyperMuduo::net {
 
         void send(std::string msg);
 
+        void send(const char* msg, size_t len);
+
         void sendInLoop(const std::string& msg);
 
         void sendInLoop(const char* msg, size_t size);

@@ -2,20 +2,20 @@
 #include <chrono>
 #include <unordered_map>
 #include <vector>
+#include "PollerBase.hpp"
 struct pollfd;
 namespace hyperMuduo::net {
     class Channel;
     class EventLoop;
 
 
-    class Poller {
+    class Poller :public PollerBase{
     public:
-        using ChannelList = std::vector<Channel*>;
-        using TimePoint = std::chrono::system_clock::time_point;
+
 
         explicit Poller(EventLoop& loop);
 
-        ~Poller() = default;
+        ~Poller() override = default;
 
         Poller(const Poller&) = delete;
 
@@ -25,25 +25,16 @@ namespace hyperMuduo::net {
 
         Poller& operator=(Poller&&) = delete;
 
-        EventLoop& getLoop() const {
-            return owner_loop_;
-        }
+        TimePoint poll(std::chrono::milliseconds timeout, ChannelList& active_channels) override;
 
-        TimePoint poll(std::chrono::milliseconds timeout, ChannelList& active_channels);
+        void updateChannel(Channel& channel) override;
 
-        void updateChannel(Channel& channel);
+        void removeChannel(Channel& channel) override;
 
-        void removeChannel(Channel& channel);
-
-        void assertInLoopThread();
     private:
         using PollFdList = std::vector<pollfd>;
-        using ChannelMap = std::unordered_map<int, Channel*>;
-
         void fillActiveChannels(int num_events, ChannelList& active_channels);
     private:
-
-        EventLoop& owner_loop_;
         ChannelMap channels_;
         PollFdList pollFdList_;
     };

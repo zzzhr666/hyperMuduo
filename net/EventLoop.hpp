@@ -13,7 +13,7 @@
 namespace hyperMuduo::net {
     class Channel;
     class Poller;
-
+    class PollerBase;
 
     class EventLoop {
     public:
@@ -59,6 +59,7 @@ namespace hyperMuduo::net {
     private:
         void abortNotInLoopThread();
 
+
     private:
         static constexpr std::chrono::milliseconds kPollTime{10};
         using ChannelList = std::vector<Channel*>;
@@ -77,7 +78,7 @@ namespace hyperMuduo::net {
 
         const int thread_id_;
 
-        std::unique_ptr<Poller> poller_;
+        std::unique_ptr<PollerBase> poller_;
 
 
         ChannelList ready_channels_;

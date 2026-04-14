@@ -78,6 +78,18 @@ namespace hyperMuduo::net {
         }
     }
 
+    void TcpConnection::send(const char* msg, size_t len) {
+        if (state_ == State::Connected) {
+            if (loop_.isInLoopThread()) {
+                sendInLoop(msg,len);
+            } else {
+                loop_.runInLoop([self = shared_from_this(),msg, len]() {
+                    self->sendInLoop(msg,len);
+                });
+            }
+        }
+    }
+
     void TcpConnection::sendInLoop(const std::string& msg) {
         sendInLoop(msg.data(), msg.size());
     }
@@ -118,10 +130,10 @@ namespace hyperMuduo::net {
 
     void TcpConnection::sendInLoop(Buffer& buffer) {
         loop_.assertInLoopThread();
-        ssize_t n_write = 0;
 
         // 1. 如果 send_buffer_ 为空且未在写，尝试直接发送
         if (!channel_->isWriting() && send_buffer_->readableBytes() == 0) {
+            ssize_t n_write = 0;
             n_write = ::write(socket_->getFd(), buffer.peek(), buffer.readableBytes());
             if (n_write >= 0) {
                 buffer.retrieve(n_write);

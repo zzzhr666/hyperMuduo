@@ -6,8 +6,8 @@
 #include "EventLoop.hpp"
 
 hyperMuduo::net::Poller::Poller(EventLoop& loop)
-    : owner_loop_{loop} {}
-
+    :PollerBase(loop) {
+}
 
 
 hyperMuduo::net::Poller::TimePoint hyperMuduo::net::Poller::poll(std::chrono::milliseconds timeout,
@@ -68,9 +68,6 @@ void hyperMuduo::net::Poller::removeChannel(Channel& channel) {
 
 }
 
-void hyperMuduo::net::Poller::assertInLoopThread() {
-    owner_loop_.assertInLoopThread();
-}
 
 void hyperMuduo::net::Poller::fillActiveChannels(int num_events, ChannelList& active_channels) {
     for (auto it = pollFdList_.begin(); it != pollFdList_.end() && num_events > 0; ++it) {

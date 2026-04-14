@@ -103,7 +103,7 @@ int hyperMuduo::net::Socket::connect(const InetAddress& addr) {
     int savedErrno = ret == 0? 0 :errno;
     if (ret == -1) {
         if (savedErrno == EINPROGRESS) {
-            SPDLOG_INFO("Socket::connect in progress to {}",addr.toIpPort());
+            SPDLOG_DEBUG("Socket::connect in progress to {}",addr.toIpPort());
         } else {
             SPDLOG_ERROR("Socket::connect failed to {},error message:{}",addr.toIpPort(),std::system_category().message(savedErrno));
         }

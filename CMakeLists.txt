@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 3.12)
 project(HyperMuduo)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -35,7 +35,8 @@ set(NET_SOURCE
         net/EventLoopThreadPool.cpp
         net/Connector.cpp
         net/TcpClient.cpp
-        net/TcpClient.hpp
+        net/Epoller.cpp
+        net/Epoller.hpp
 
 )
 
@@ -69,3 +70,4 @@ target_link_libraries(hyper_muduo
 
 
 add_subdirectory(test)
+add_subdirectory(benchmark)

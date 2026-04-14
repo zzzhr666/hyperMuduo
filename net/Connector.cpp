@@ -100,7 +100,7 @@ void hyperMuduo::net::Connector::handleWritable() {
     
     state_ = State::Connected;
     resetChannel();
-    SPDLOG_INFO("Connector::handleWritable - Connection established");
+    SPDLOG_DEBUG("Connector::handleWritable - Connection established");
 
     if (new_connection_callback_) {
         new_connection_callback_(std::move(*socket_));
@@ -117,7 +117,10 @@ void hyperMuduo::net::Connector::resetChannel() {
 }
 
 void hyperMuduo::net::Connector::retry() {
-
+    // Reset state before retrying
+    setState(State::Disconnected);
+    socket_.reset();
+    
     retry_delay_ = std::min(2 * retry_delay_,std::chrono::duration_cast<std::chrono::milliseconds>(MAX_RETRY_DELAY));
     if (connect_ == true) {
         loop_.runAfter(retry_delay_,[self = shared_from_this()]() {

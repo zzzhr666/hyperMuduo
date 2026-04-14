@@ -68,34 +68,5 @@ add_hyper_test(ProtobufHandlerTests test_protobuf_handler.cpp)
 # Connector 测试
 add_hyper_test(ConnectorTests test_connector.cpp)
 
-# ==================== 汇总大测试 ====================
-# 将所有测试文件合并为一个可执行文件
-add_executable(HyperMuduoAllTests
-    test_buffer.cpp
-    test_codec.cpp
-    test_protobuf.cpp
-    test_event_loop.cpp
-    test_timer.cpp
-    test_timerqueue.cpp
-    test_eventloopthread.cpp
-    test_inetaddress.cpp
-    test_socket.cpp
-    test_acceptor.cpp
-    test_tcpserver.cpp
-    test_tcpserver_multithread.cpp
-    test_tcpserver_advanced.cpp
-    test_tcpconnection.cpp
-    test_buffer_integration.cpp
-    test_channel.cpp
-    test_protobuf_handler.cpp
-    test_connector.cpp
-)
-
-target_link_libraries(HyperMuduoAllTests
-    PRIVATE
-    hyper_muduo
-    GTest::gtest
-    GTest::gtest_main
-)
-
-add_test(NAME HyperMuduoAllTests COMMAND HyperMuduoAllTests)
+# TcpClient 测试
+add_hyper_test(TcpClientTests test_tcpclient.cpp)

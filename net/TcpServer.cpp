@@ -11,9 +11,9 @@ hyperMuduo::net::TcpServer::TcpServer(EventLoop& loop, const InetAddress& listen
     : loop_(loop),
       server_name_(name),
       acceptor_(std::make_unique<Acceptor>(loop, listen_addr)),
+      high_water_mark_(64 * 1024 * 1024),
       started_(false),
-      next_conn_id_(1),
-      high_water_mark_(64 * 1024 * 1024),thread_pool_(std::make_unique<EventLoopThreadPool>(loop)) {
+      next_conn_id_(1),thread_pool_(std::make_unique<EventLoopThreadPool>(loop)) {
     acceptor_->setNewConnectionCallback([this](Socket socket, const InetAddress& peer_addr) {
         loop_.assertInLoopThread();
         char buf[32];

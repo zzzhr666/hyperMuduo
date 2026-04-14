@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ "feature/dev" ]
+  pull_request:
+    branches: [ "feature/dev" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install Build Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake pkg-config zip unzip curl git
+
+    - name: Install Dependencies via vcpkg
+      # 使用 vcpkg 编译安装最新稳定版依赖，彻底解决系统库版本过低导致的 API 不兼容
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        cd vcpkg
+        ./bootstrap-vcpkg.sh
+        ./vcpkg install protobuf spdlog gtest zlib --triplet x64-linux
+
+    - name: Build
+      run: |
+        # 指定 vcpkg 工具链文件，确保 CMake 能找到新编译的依赖
+        cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake --build build
+
+    - name: Test
+      run: |
+        cd build
+        ctest --output-on-failure
